@@ -1,0 +1,377 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>godialog: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/heathcliff26/godialog/dbus_linux.go (18.9%)</option>
+				
+				<option value="file1">github.com/heathcliff26/godialog/dialog.go (40.5%)</option>
+				
+				<option value="file2">github.com/heathcliff26/godialog/dialog_linux.go (0.0%)</option>
+				
+				<option value="file3">github.com/heathcliff26/godialog/filter.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">//go:build linux
+
+package filedialog
+
+import (
+        "fmt"
+        "strings"
+
+        "github.com/godbus/dbus/v5"
+)
+
+const (
+        ObjectName = "org.freedesktop.portal.Desktop"
+        ObjectPath = "/org/freedesktop/portal/desktop"
+
+        FileChooserBase     = "org.freedesktop.portal.FileChooser"
+        FileChooserOpenFile = ".OpenFile"
+        FileChooserSaveFile = ".SaveFile"
+)
+
+type freedesktopFilterRule struct {
+        Type    uint32
+        Pattern string
+}
+
+// Filter specifies a filter containing various rules for allowed files.
+type freedesktopFilter struct {
+        Name  string
+        Rules []freedesktopFilterRule
+}
+
+func convertFilters(filters FileFilters) []freedesktopFilter <span class="cov1" title="1">{
+        var result []freedesktopFilter
+        for _, filter := range filters </span><span class="cov10" title="4">{
+                var filterRules []freedesktopFilterRule
+                for _, rule := range filter.Extensions </span><span class="cov10" title="4">{
+                        filterRules = append(filterRules, freedesktopFilterRule{Type: 0, Pattern: "*" + rule})
+                }</span>
+                <span class="cov10" title="4">result = append(result, freedesktopFilter{Name: filter.Description, Rules: filterRules})</span>
+        }
+        <span class="cov1" title="1">return result</span>
+}
+
+func dbusFileChooser(method string, title string, startLocation string, filters FileFilters) error <span class="cov0" title="0">{
+        freedesktopFilters := convertFilters(filters)
+
+        currentFolder := make([]byte, len(startLocation)+1)
+        copy(currentFolder, startLocation)
+
+        options := map[string]dbus.Variant{
+                "modal":          dbus.MakeVariant(true),
+                "current_folder": dbus.MakeVariant(currentFolder),
+                "filters":        dbus.MakeVariant(freedesktopFilters),
+        }
+
+        conn, err := dbus.SessionBus() // shared connection, don't close
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to connect to session bus: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">obj := conn.Object(ObjectName, ObjectPath)
+        err = obj.Call(FileChooserBase+method, 0, "", title, options).Err
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to call %s on dbus: %w", method, err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func dbusWaitForResponse() (string, error) <span class="cov0" title="0">{
+        conn, err := dbus.SessionBus() // shared connection, don't close
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to connect to session bus: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">err = conn.AddMatchSignal(
+                dbus.WithMatchObjectPath(ObjectPath),
+                dbus.WithMatchInterface("org.freedesktop.portal.Request"),
+                dbus.WithMatchMember("Response"),
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to subscribe to response signal: %w", err)
+        }</span>
+        <span class="cov0" title="0">c := make(chan *dbus.Signal)
+        conn.Signal(c)
+
+        res := &lt;-c
+        if len(res.Body) &lt; 2 </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("invalid response from dbus: %v", res.Body)
+        }</span>
+        <span class="cov0" title="0">if res.Body[0].(uint32) != 0 </span><span class="cov0" title="0">{
+                // User cancelled the dialog
+                return "", nil
+        }</span>
+        <span class="cov0" title="0">uris := res.Body[1].(map[string]dbus.Variant)["uris"].Value().([]string)
+        if len(uris) == 0 </span><span class="cov0" title="0">{
+                return "", nil
+        }</span>
+
+        <span class="cov0" title="0">path, _ := strings.CutPrefix(uris[0], "file://")
+        return path, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package filedialog
+
+import (
+        "fmt"
+
+        "fyne.io/fyne/v2"
+        "fyne.io/fyne/v2/dialog"
+        "fyne.io/fyne/v2/storage"
+)
+
+const (
+        DialogHeight = 800
+        DialogWidth  = 600
+)
+
+type GenericURICloser interface {
+        Close() error
+        URI() fyne.URI
+}
+
+// Use internal fyne file dialog to open a file.
+func internalFileOpen(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
+        w := fyne.CurrentApp().NewWindow(name)
+        d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) </span><span class="cov0" title="0">{
+                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
+                go callCallback(cb, uri, err)
+        }</span>, w)
+
+        <span class="cov0" title="0">err := showFileDialog(startLocation, filters.Extensions(), d, w)
+        if err != nil </span><span class="cov0" title="0">{
+                cb("", err)
+        }</span>
+}
+
+// Use internal fyne file dialog to save a file.
+func internalFileSave(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
+        w := fyne.CurrentApp().NewWindow(name)
+        d := dialog.NewFileSave(func(uri fyne.URIWriteCloser, err error) </span><span class="cov0" title="0">{
+                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
+                go callCallback(cb, uri, err)
+        }</span>, w)
+
+        <span class="cov0" title="0">err := showFileDialog(startLocation, filters.Extensions(), d, w)
+        if err != nil </span><span class="cov0" title="0">{
+                cb("", err)
+        }</span>
+}
+
+// Set a file dialogs location to the given directory.
+// When dir is empty, uses current directory.
+// Returns error on failure.
+func setDialogLocationToDir(dir string, d *dialog.FileDialog) error <span class="cov10" title="3">{
+        uri, err := storage.ParseURI("file://" + dir)
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("failed to parse URI: %w", err)
+        }</span>
+        <span class="cov6" title="2">listURI, err := storage.ListerForURI(uri)
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("failed to create lister for URI: %w", err)
+        }</span>
+        <span class="cov1" title="1">d.SetLocation(listURI)
+
+        return nil</span>
+}
+
+func showFileDialog(startLocation string, extensions []string, d *dialog.FileDialog, w fyne.Window) error <span class="cov0" title="0">{
+        d.SetFilter(storage.NewExtensionFileFilter(extensions))
+
+        err := setDialogLocationToDir(startLocation, d)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">d.SetOnClosed(func() </span><span class="cov0" title="0">{
+                w.Close()
+        }</span>)
+
+        <span class="cov0" title="0">w.Resize(fyne.NewSize(DialogHeight, DialogWidth))
+        w.SetFixedSize(true)
+        d.Resize(fyne.NewSize(DialogHeight, DialogWidth))
+        fyne.Do(func() </span><span class="cov0" title="0">{
+                w.Show()
+                d.Show()
+        }</span>)
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func callCallback(cb func(string, error), uri GenericURICloser, err error) <span class="cov10" title="3">{
+        if err != nil </span><span class="cov1" title="1">{
+                cb("", err)
+                return
+        }</span>
+        <span class="cov6" title="2">if uri == nil </span><span class="cov1" title="1">{
+                cb("", nil)
+                return
+        }</span>
+        <span class="cov1" title="1">defer uri.Close()
+
+        path := uri.URI().Path()
+        cb(path, nil)</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">//go:build linux
+
+package filedialog
+
+import "log/slog"
+
+// Show a file open dialog in a new window and return path.
+func FileOpen(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
+        err := dbusFileChooser(FileChooserOpenFile, name, startLocation, filters)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Info("Failed to open os native file dialog, falling back to internal implementation", "error", err)
+                internalFileOpen(name, startLocation, filters, cb)
+                return
+        }</span>
+
+        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
+}
+
+// Show a file save dialog in a new window and return path.
+func FileSave(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
+        err := dbusFileChooser(FileChooserSaveFile, name, startLocation, filters)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Info("Failed to open os native file dialog, falling back to internal implementation", "error", err)
+                internalFileSave(name, startLocation, filters, cb)
+                return
+        }</span>
+
+        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package filedialog
+
+type FileFilter struct {
+        // A short description of this filter.
+        // Example: "Images (*.png, *.jpg)"
+        Description string
+        // A list of file extensions to filter.
+        // Example: []string{".png", ".jpg"}
+        Extensions []string
+}
+
+type FileFilters []FileFilter
+
+// Returns a list of all file extensions from all filters.
+func (ff FileFilters) Extensions() []string <span class="cov1" title="1">{
+        var extensions []string
+        for _, filter := range ff </span><span class="cov10" title="4">{
+                extensions = append(extensions, filter.Extensions...)
+        }</span>
+        <span class="cov1" title="1">return extensions</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
