@@ -5,6 +5,7 @@ package godialog
 import (
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strings"
 
 	"github.com/godbus/dbus/v5"
@@ -142,5 +143,9 @@ func dbusWaitForResponse() (string, error) {
 	}
 
 	path, _ := strings.CutPrefix(uris[0], "file://")
+	path, err = url.PathUnescape(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to unescape path: %w", err)
+	}
 	return path, nil
 }
