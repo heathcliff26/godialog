@@ -55,13 +55,15 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/heathcliff26/godialog/dbus_linux.go (18.9%)</option>
+				<option value="file0">github.com/heathcliff26/godialog/dialog.go (100.0%)</option>
 				
-				<option value="file1">github.com/heathcliff26/godialog/dialog.go (40.5%)</option>
+				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (13.2%)</option>
 				
-				<option value="file2">github.com/heathcliff26/godialog/dialog_linux.go (0.0%)</option>
+				<option value="file2">github.com/heathcliff26/godialog/fallback/fyne/dialog.go (59.4%)</option>
 				
-				<option value="file3">github.com/heathcliff26/godialog/filter.go (100.0%)</option>
+				<option value="file3">github.com/heathcliff26/godialog/fallback/fyne/utils.go (100.0%)</option>
+				
+				<option value="file4">github.com/heathcliff26/godialog/filter.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -84,24 +86,73 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">//go:build linux
+		<pre class="file" id="file0" style="display: none">package filedialog
+
+type DialogCallback func(string, error)
+
+type FallbackDialog interface {
+        // Shows the open file dialog and calls the callback asynchronously.
+        Open(title string, initialDirectory string, filters FileFilters, cb DialogCallback)
+        // Shows the save file dialog and calls the callback asynchronously.
+        Save(title string, initialDirectory string, filters FileFilters, cb DialogCallback)
+}
+
+// OS native file dialog. Allows to define a fallback implementation in case it does not work.
+// File dialogs are always opened asynchronously.
+type FileDialog struct {
+        // The directory that the file dialog should open in.
+        InitialDirectory string
+        filters          FileFilters
+        fallback         FallbackDialog
+}
+
+// Return the current file filters.
+// Returns nil if no filters are set.
+func (fd *FileDialog) Filters() FileFilters <span class="cov10" title="2">{
+        return fd.filters
+}</span>
+
+// Add a new filter to the list of filters.
+func (fd *FileDialog) AddFilter(filter FileFilter) <span class="cov1" title="1">{
+        fd.filters = append(fd.filters, filter)
+}</span>
+
+// Set the file filters.
+func (fd *FileDialog) SetFilters(filters FileFilters) <span class="cov1" title="1">{
+        fd.filters = filters
+}</span>
+
+// The current fallback dialog.
+// Returns nil if no fallback is set.
+func (fd *FileDialog) Fallback() FallbackDialog <span class="cov1" title="1">{
+        return fd.fallback
+}</span>
+
+// Set the fallback dialog in case the native dialog does not work.
+func (fd *FileDialog) SetFallback(fallback FallbackDialog) <span class="cov1" title="1">{
+        fd.fallback = fallback
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">//go:build linux
 
 package filedialog
 
 import (
         "fmt"
+        "log/slog"
         "strings"
 
         "github.com/godbus/dbus/v5"
 )
 
 const (
-        ObjectName = "org.freedesktop.portal.Desktop"
-        ObjectPath = "/org/freedesktop/portal/desktop"
+        DBusObjectName = "org.freedesktop.portal.Desktop"
+        DBusObjectPath = "/org/freedesktop/portal/desktop"
 
-        FileChooserBase     = "org.freedesktop.portal.FileChooser"
-        FileChooserOpenFile = ".OpenFile"
-        FileChooserSaveFile = ".SaveFile"
+        DBusFileChooserBase     = "org.freedesktop.portal.FileChooser"
+        DBusFileChooserOpenFile = ".OpenFile"
+        DBusFileChooserSaveFile = ".SaveFile"
 )
 
 type freedesktopFilterRule struct {
@@ -115,23 +166,44 @@ type freedesktopFilter struct {
         Rules []freedesktopFilterRule
 }
 
-func convertFilters(filters FileFilters) []freedesktopFilter <span class="cov1" title="1">{
-        var result []freedesktopFilter
-        for _, filter := range filters </span><span class="cov10" title="4">{
-                var filterRules []freedesktopFilterRule
-                for _, rule := range filter.Extensions </span><span class="cov10" title="4">{
-                        filterRules = append(filterRules, freedesktopFilterRule{Type: 0, Pattern: "*" + rule})
+// Show a file open dialog in a new window and return path.
+func (fd *FileDialog) Open(title string, cb DialogCallback) <span class="cov0" title="0">{
+        err := fd.dbusFileChooser(DBusFileChooserOpenFile, title)
+        if err != nil </span><span class="cov0" title="0">{
+                if fd.fallback != nil </span><span class="cov0" title="0">{
+                        slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
+                        fd.fallback.Open(title, fd.InitialDirectory, fd.filters, cb)
+                }</span> else<span class="cov0" title="0"> {
+                        go cb("", fmt.Errorf("cannot open file dialog: %w", err))
                 }</span>
-                <span class="cov10" title="4">result = append(result, freedesktopFilter{Name: filter.Description, Rules: filterRules})</span>
+                <span class="cov0" title="0">return</span>
         }
-        <span class="cov1" title="1">return result</span>
+
+        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
 }
 
-func dbusFileChooser(method string, title string, startLocation string, filters FileFilters) error <span class="cov0" title="0">{
-        freedesktopFilters := convertFilters(filters)
+// Show a file save dialog in a new window and return path.
+func (fd *FileDialog) Save(title string, cb DialogCallback) <span class="cov0" title="0">{
+        err := fd.dbusFileChooser(DBusFileChooserSaveFile, title)
+        if err != nil </span><span class="cov0" title="0">{
+                if fd.fallback != nil </span><span class="cov0" title="0">{
+                        slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
+                        fd.fallback.Save(title, fd.InitialDirectory, fd.filters, cb)
+                }</span> else<span class="cov0" title="0"> {
+                        go cb("", fmt.Errorf("cannot open file dialog: %w", err))
+                }</span>
+                <span class="cov0" title="0">return</span>
+        }
 
-        currentFolder := make([]byte, len(startLocation)+1)
-        copy(currentFolder, startLocation)
+        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
+}
+
+// Call freedesktop via dbus to show a file chooser dialog.
+func (fd *FileDialog) dbusFileChooser(method string, title string) error <span class="cov0" title="0">{
+        freedesktopFilters := convertFiltersToFreedesktopFilter(fd.filters)
+
+        currentFolder := make([]byte, len(fd.InitialDirectory)+1)
+        copy(currentFolder, fd.InitialDirectory)
 
         options := map[string]dbus.Variant{
                 "modal":          dbus.MakeVariant(true),
@@ -144,14 +216,27 @@ func dbusFileChooser(method string, title string, startLocation string, filters 
                 return fmt.Errorf("failed to connect to session bus: %w", err)
         }</span>
 
-        <span class="cov0" title="0">obj := conn.Object(ObjectName, ObjectPath)
-        err = obj.Call(FileChooserBase+method, 0, "", title, options).Err
+        <span class="cov0" title="0">obj := conn.Object(DBusObjectName, DBusObjectPath)
+        err = obj.Call(DBusFileChooserBase+method, 0, "", title, options).Err
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to call %s on dbus: %w", method, err)
         }</span>
         <span class="cov0" title="0">return nil</span>
 }
 
+func convertFiltersToFreedesktopFilter(filters FileFilters) []freedesktopFilter <span class="cov1" title="1">{
+        var result []freedesktopFilter
+        for _, filter := range filters </span><span class="cov10" title="4">{
+                var filterRules []freedesktopFilterRule
+                for _, rule := range filter.Extensions </span><span class="cov10" title="4">{
+                        filterRules = append(filterRules, freedesktopFilterRule{Type: 0, Pattern: "*" + rule})
+                }</span>
+                <span class="cov10" title="4">result = append(result, freedesktopFilter{Name: filter.Description, Rules: filterRules})</span>
+        }
+        <span class="cov1" title="1">return result</span>
+}
+
+// Wait for the response from the file chooser dialog.
 func dbusWaitForResponse() (string, error) <span class="cov0" title="0">{
         conn, err := dbus.SessionBus() // shared connection, don't close
         if err != nil </span><span class="cov0" title="0">{
@@ -159,7 +244,7 @@ func dbusWaitForResponse() (string, error) <span class="cov0" title="0">{
         }</span>
 
         <span class="cov0" title="0">err = conn.AddMatchSignal(
-                dbus.WithMatchObjectPath(ObjectPath),
+                dbus.WithMatchObjectPath(DBusObjectPath),
                 dbus.WithMatchInterface("org.freedesktop.portal.Request"),
                 dbus.WithMatchMember("Response"),
         )
@@ -187,7 +272,7 @@ func dbusWaitForResponse() (string, error) <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package filedialog
+		<pre class="file" id="file2" style="display: none">package fyne
 
 import (
         "fmt"
@@ -195,92 +280,133 @@ import (
         "fyne.io/fyne/v2"
         "fyne.io/fyne/v2/dialog"
         "fyne.io/fyne/v2/storage"
+        filedialog "github.com/heathcliff26/godialog"
 )
 
 const (
-        DialogHeight = 800
-        DialogWidth  = 600
+        DefaultDialogHeight float32 = 800
+        DefaultDialogWidth  float32 = 600
 )
+
+// Ensure FyneFallbackDialog implements filedialog.FallbackDialog
+var _ filedialog.FallbackDialog = (*FyneFallbackDialog)(nil)
+
+// Opens a file dialog in a new fyne window for the given app.
+type FyneFallbackDialog struct {
+        App    fyne.App
+        Height float32
+        Width  float32
+}
+
+func NewFyneFallbackDialog(app fyne.App) *FyneFallbackDialog <span class="cov10" title="2">{
+        return &amp;FyneFallbackDialog{
+                App:    app,
+                Height: DefaultDialogHeight,
+                Width:  DefaultDialogWidth,
+        }
+}</span>
+
+// Shows the open file dialog and calls the callback asynchronously.
+func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters filedialog.FileFilters, cb filedialog.DialogCallback) <span class="cov1" title="1">{
+        if f.App == nil </span><span class="cov1" title="1">{
+                go cb("", fmt.Errorf("cannot open file dialog: fyne.App is nil"))
+                return
+        }</span>
+
+        <span class="cov0" title="0">w := f.App.NewWindow(title)
+        d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) </span><span class="cov0" title="0">{
+                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
+                go callCallback(cb, uri, err)
+        }</span>, w)
+
+        <span class="cov0" title="0">err := f.showFileDialog(initialDirectory, filters, d, w)
+        if err != nil </span><span class="cov0" title="0">{
+                go cb("", err)
+        }</span>
+}
+
+// Shows the save file dialog and calls the callback asynchronously.
+func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters filedialog.FileFilters, cb filedialog.DialogCallback) <span class="cov1" title="1">{
+        if f.App == nil </span><span class="cov1" title="1">{
+                go cb("", fmt.Errorf("cannot open file dialog: fyne.App is nil"))
+                return
+        }</span>
+
+        <span class="cov0" title="0">w := f.App.NewWindow(title)
+        d := dialog.NewFileSave(func(uri fyne.URIWriteCloser, err error) </span><span class="cov0" title="0">{
+                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
+                go callCallback(cb, uri, err)
+        }</span>, w)
+
+        <span class="cov0" title="0">err := f.showFileDialog(initialDirectory, filters, d, w)
+        if err != nil </span><span class="cov0" title="0">{
+                go cb("", err)
+        }</span>
+}
+
+func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters filedialog.FileFilters, d *dialog.FileDialog, w fyne.Window) error <span class="cov10" title="2">{
+        d.SetFilter(storage.NewExtensionFileFilter(filters.Extensions()))
+
+        err := setDialogLocationToDir(initialDirectory, d)
+        if err != nil </span><span class="cov1" title="1">{
+                return err
+        }</span>
+
+        <span class="cov1" title="1">d.SetOnClosed(func() </span><span class="cov0" title="0">{
+                w.Close()
+        }</span>)
+
+        <span class="cov1" title="1">w.Resize(fyne.NewSize(f.Height, f.Width))
+        w.SetFixedSize(true)
+        d.Resize(fyne.NewSize(f.Height, f.Width))
+        fyne.Do(func() </span><span class="cov1" title="1">{
+                w.Show()
+                d.Show()
+        }</span>)
+
+        <span class="cov1" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package fyne
+
+import (
+        "fmt"
+
+        "fyne.io/fyne/v2"
+        "fyne.io/fyne/v2/dialog"
+        "fyne.io/fyne/v2/storage"
+        filedialog "github.com/heathcliff26/godialog"
+)
+
+// Set a file dialogs location to the given directory.
+// When dir is empty, uses current directory.
+// Returns error on failure.
+func setDialogLocationToDir(dir string, d *dialog.FileDialog) error <span class="cov10" title="5">{
+        uri, err := storage.ParseURI("file://" + dir)
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("failed to parse URI: %w", err)
+        }</span>
+        <span class="cov8" title="4">listURI, err := storage.ListerForURI(uri)
+        if err != nil </span><span class="cov4" title="2">{
+                return fmt.Errorf("failed to create lister for URI: %w", err)
+        }</span>
+        <span class="cov4" title="2">d.SetLocation(listURI)
+
+        return nil</span>
+}
 
 type GenericURICloser interface {
         Close() error
         URI() fyne.URI
 }
 
-// Use internal fyne file dialog to open a file.
-func internalFileOpen(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
-        w := fyne.CurrentApp().NewWindow(name)
-        d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) </span><span class="cov0" title="0">{
-                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
-                go callCallback(cb, uri, err)
-        }</span>, w)
-
-        <span class="cov0" title="0">err := showFileDialog(startLocation, filters.Extensions(), d, w)
-        if err != nil </span><span class="cov0" title="0">{
-                cb("", err)
-        }</span>
-}
-
-// Use internal fyne file dialog to save a file.
-func internalFileSave(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
-        w := fyne.CurrentApp().NewWindow(name)
-        d := dialog.NewFileSave(func(uri fyne.URIWriteCloser, err error) </span><span class="cov0" title="0">{
-                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
-                go callCallback(cb, uri, err)
-        }</span>, w)
-
-        <span class="cov0" title="0">err := showFileDialog(startLocation, filters.Extensions(), d, w)
-        if err != nil </span><span class="cov0" title="0">{
-                cb("", err)
-        }</span>
-}
-
-// Set a file dialogs location to the given directory.
-// When dir is empty, uses current directory.
-// Returns error on failure.
-func setDialogLocationToDir(dir string, d *dialog.FileDialog) error <span class="cov10" title="3">{
-        uri, err := storage.ParseURI("file://" + dir)
-        if err != nil </span><span class="cov1" title="1">{
-                return fmt.Errorf("failed to parse URI: %w", err)
-        }</span>
-        <span class="cov6" title="2">listURI, err := storage.ListerForURI(uri)
-        if err != nil </span><span class="cov1" title="1">{
-                return fmt.Errorf("failed to create lister for URI: %w", err)
-        }</span>
-        <span class="cov1" title="1">d.SetLocation(listURI)
-
-        return nil</span>
-}
-
-func showFileDialog(startLocation string, extensions []string, d *dialog.FileDialog, w fyne.Window) error <span class="cov0" title="0">{
-        d.SetFilter(storage.NewExtensionFileFilter(extensions))
-
-        err := setDialogLocationToDir(startLocation, d)
-        if err != nil </span><span class="cov0" title="0">{
-                return err
-        }</span>
-
-        <span class="cov0" title="0">d.SetOnClosed(func() </span><span class="cov0" title="0">{
-                w.Close()
-        }</span>)
-
-        <span class="cov0" title="0">w.Resize(fyne.NewSize(DialogHeight, DialogWidth))
-        w.SetFixedSize(true)
-        d.Resize(fyne.NewSize(DialogHeight, DialogWidth))
-        fyne.Do(func() </span><span class="cov0" title="0">{
-                w.Show()
-                d.Show()
-        }</span>)
-
-        <span class="cov0" title="0">return nil</span>
-}
-
-func callCallback(cb func(string, error), uri GenericURICloser, err error) <span class="cov10" title="3">{
+func callCallback(cb filedialog.DialogCallback, uri GenericURICloser, err error) <span class="cov7" title="3">{
         if err != nil </span><span class="cov1" title="1">{
                 cb("", err)
                 return
         }</span>
-        <span class="cov6" title="2">if uri == nil </span><span class="cov1" title="1">{
+        <span class="cov4" title="2">if uri == nil </span><span class="cov1" title="1">{
                 cb("", nil)
                 return
         }</span>
@@ -291,38 +417,7 @@ func callCallback(cb func(string, error), uri GenericURICloser, err error) <span
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">//go:build linux
-
-package filedialog
-
-import "log/slog"
-
-// Show a file open dialog in a new window and return path.
-func FileOpen(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
-        err := dbusFileChooser(FileChooserOpenFile, name, startLocation, filters)
-        if err != nil </span><span class="cov0" title="0">{
-                slog.Info("Failed to open os native file dialog, falling back to internal implementation", "error", err)
-                internalFileOpen(name, startLocation, filters, cb)
-                return
-        }</span>
-
-        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
-}
-
-// Show a file save dialog in a new window and return path.
-func FileSave(name string, startLocation string, filters FileFilters, cb func(string, error)) <span class="cov0" title="0">{
-        err := dbusFileChooser(FileChooserSaveFile, name, startLocation, filters)
-        if err != nil </span><span class="cov0" title="0">{
-                slog.Info("Failed to open os native file dialog, falling back to internal implementation", "error", err)
-                internalFileSave(name, startLocation, filters, cb)
-                return
-        }</span>
-
-        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
-}
-</pre>
-		
-		<pre class="file" id="file3" style="display: none">package filedialog
+		<pre class="file" id="file4" style="display: none">package filedialog
 
 type FileFilter struct {
         // A short description of this filter.
