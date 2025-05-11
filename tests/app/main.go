@@ -99,7 +99,7 @@ func main() {
 	openButton := widget.NewButton("Open File Dialog", func() {
 		fd := prepFileDialog(startLocationEntry.Text, filterEntry.Text)
 
-		appendLog(fmt.Sprintf("Open file dialog. folder: '%s', filters: '%v'", fd.InitialDirectory, fd.Filters()))
+		appendLog(fmt.Sprintf("Open file dialog. folder: '%s', filters: '%v'", fd.InitialDirectory(), fd.Filters()))
 
 		fd.Open(titleEntry.Text, func(path string, err error) {
 			if err != nil {
@@ -113,7 +113,7 @@ func main() {
 	saveButton := widget.NewButton("Save File Dialog", func() {
 		fd := prepFileDialog(startLocationEntry.Text, filterEntry.Text)
 
-		appendLog(fmt.Sprintf("Save file dialog. folder: '%s', filters: '%v'", fd.InitialDirectory, fd.Filters()))
+		appendLog(fmt.Sprintf("Save file dialog. folder: '%s', filters: '%v'", fd.InitialDirectory(), fd.Filters()))
 
 		fd.Save(titleEntry.Text, func(path string, err error) {
 			if err != nil {
@@ -164,9 +164,8 @@ func main() {
 
 func prepFileDialog(startLocationText string, filterText string) godialog.FileDialog {
 	filters := parseFilters(filterText)
-	fd := godialog.FileDialog{
-		InitialDirectory: startLocationText,
-	}
+	fd := godialog.NewFileDialog()
+	fd.SetInitialDirectory(startLocationText)
 	fd.SetFilters(filters)
 	return fd
 }

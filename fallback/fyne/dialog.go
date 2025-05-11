@@ -15,7 +15,7 @@ const (
 )
 
 // Ensure FyneFallbackDialog implements godialog.FallbackDialog
-var _ godialog.FallbackDialog = (*FyneFallbackDialog)(nil)
+var _ godialog.FallbackDialog = &FyneFallbackDialog{}
 
 // Opens a file dialog in a new fyne window for the given app.
 type FyneFallbackDialog struct {

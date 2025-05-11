@@ -31,12 +31,12 @@ type freedesktopFilter struct {
 }
 
 // Show a file open dialog in a new window and return path.
-func (fd *FileDialog) Open(title string, cb DialogCallback) {
+func (fd *fileDialog) Open(title string, cb DialogCallback) {
 	err := fd.dbusFileChooser(DBusFileChooserOpenFile, title)
 	if err != nil {
 		if fd.fallback != nil {
 			slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
-			fd.fallback.Open(title, fd.InitialDirectory, fd.filters, cb)
+			fd.fallback.Open(title, fd.InitialDirectory(), fd.filters, cb)
 		} else {
 			go cb("", fmt.Errorf("cannot open file dialog: %w", err))
 		}
@@ -47,12 +47,12 @@ func (fd *FileDialog) Open(title string, cb DialogCallback) {
 }
 
 // Show a file save dialog in a new window and return path.
-func (fd *FileDialog) Save(title string, cb DialogCallback) {
+func (fd *fileDialog) Save(title string, cb DialogCallback) {
 	err := fd.dbusFileChooser(DBusFileChooserSaveFile, title)
 	if err != nil {
 		if fd.fallback != nil {
 			slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
-			fd.fallback.Save(title, fd.InitialDirectory, fd.filters, cb)
+			fd.fallback.Save(title, fd.InitialDirectory(), fd.filters, cb)
 		} else {
 			go cb("", fmt.Errorf("cannot open file dialog: %w", err))
 		}
@@ -63,11 +63,11 @@ func (fd *FileDialog) Save(title string, cb DialogCallback) {
 }
 
 // Call freedesktop via dbus to show a file chooser dialog.
-func (fd *FileDialog) dbusFileChooser(method string, title string) error {
+func (fd *fileDialog) dbusFileChooser(method string, title string) error {
 	freedesktopFilters := convertFiltersToFreedesktopFilter(fd.filters)
 
-	currentFolder := make([]byte, len(fd.InitialDirectory)+1)
-	copy(currentFolder, fd.InitialDirectory)
+	currentFolder := make([]byte, len(fd.InitialDirectory())+1)
+	copy(currentFolder, fd.InitialDirectory())
 
 	options := map[string]dbus.Variant{
 		"modal":          dbus.MakeVariant(true),
