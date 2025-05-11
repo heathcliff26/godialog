@@ -57,7 +57,7 @@
 				
 				<option value="file0">github.com/heathcliff26/godialog/dialog.go (100.0%)</option>
 				
-				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (13.2%)</option>
+				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (47.3%)</option>
 				
 				<option value="file2">github.com/heathcliff26/godialog/fallback/fyne/dialog.go (59.4%)</option>
 				
@@ -120,8 +120,10 @@ type FileDialog interface {
         InitialDirectory() string
 
         // Show a file open dialog in a new window and return path.
+        // Runs asynchronously.
         Open(title string, cb DialogCallback)
         // Show a file save dialog in a new window and return path.
+        // Runs asynchronously.
         Save(title string, cb DialogCallback)
 }
 
@@ -135,12 +137,12 @@ type fileDialog struct {
 }
 
 // Create a new file dialog.
-func NewFileDialog() FileDialog <span class="cov10" title="4">{
+func NewFileDialog() FileDialog <span class="cov10" title="5">{
         return &amp;fileDialog{}
 }</span>
 
 // Return the current file filters (nil if no filters are set).
-func (fd *fileDialog) Filters() FileFilters <span class="cov5" title="2">{
+func (fd *fileDialog) Filters() FileFilters <span class="cov4" title="2">{
         return fd.filters
 }</span>
 
@@ -171,7 +173,7 @@ func (fd *fileDialog) SetInitialDirectory(dir string) <span class="cov1" title="
 }</span>
 
 // Get the initial directory for the file dialog.
-func (fd *fileDialog) InitialDirectory() string <span class="cov1" title="1">{
+func (fd *fileDialog) InitialDirectory() string <span class="cov10" title="5">{
         return fd.initialDirectory
 }</span>
 </pre>
@@ -209,39 +211,49 @@ type freedesktopFilter struct {
 }
 
 // Show a file open dialog in a new window and return path.
-func (fd *fileDialog) Open(title string, cb DialogCallback) <span class="cov0" title="0">{
+func (fd *fileDialog) Open(title string, cb DialogCallback) <span class="cov1" title="1">{
+        go fd.open(title, cb)
+}</span>
+
+// Show a file save dialog in a new window and return path.
+func (fd *fileDialog) Save(title string, cb DialogCallback) <span class="cov1" title="1">{
+        go fd.save(title, cb)
+}</span>
+
+// The actual implementation for Open. Should be run in a goroutine.
+func (fd *fileDialog) open(title string, cb DialogCallback) <span class="cov1" title="1">{
         err := fd.dbusFileChooser(DBusFileChooserOpenFile, title)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov1" title="1">{
                 if fd.fallback != nil </span><span class="cov0" title="0">{
                         slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
                         fd.fallback.Open(title, fd.InitialDirectory(), fd.filters, cb)
-                }</span> else<span class="cov0" title="0"> {
-                        go cb("", fmt.Errorf("cannot open file dialog: %w", err))
+                }</span> else<span class="cov1" title="1"> {
+                        cb("", fmt.Errorf("cannot open file dialog: %w", err))
                 }</span>
-                <span class="cov0" title="0">return</span>
+                <span class="cov1" title="1">return</span>
         }
 
-        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
+        <span class="cov0" title="0">cb(dbusWaitForResponse())</span>
 }
 
-// Show a file save dialog in a new window and return path.
-func (fd *fileDialog) Save(title string, cb DialogCallback) <span class="cov0" title="0">{
+// The actual implementation for Save. Should be run in a goroutine.
+func (fd *fileDialog) save(title string, cb DialogCallback) <span class="cov1" title="1">{
         err := fd.dbusFileChooser(DBusFileChooserSaveFile, title)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov1" title="1">{
                 if fd.fallback != nil </span><span class="cov0" title="0">{
                         slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
                         fd.fallback.Save(title, fd.InitialDirectory(), fd.filters, cb)
-                }</span> else<span class="cov0" title="0"> {
-                        go cb("", fmt.Errorf("cannot open file dialog: %w", err))
+                }</span> else<span class="cov1" title="1"> {
+                        cb("", fmt.Errorf("cannot open file dialog: %w", err))
                 }</span>
-                <span class="cov0" title="0">return</span>
+                <span class="cov1" title="1">return</span>
         }
 
-        <span class="cov0" title="0">go cb(dbusWaitForResponse())</span>
+        <span class="cov0" title="0">cb(dbusWaitForResponse())</span>
 }
 
 // Call freedesktop via dbus to show a file chooser dialog.
-func (fd *fileDialog) dbusFileChooser(method string, title string) error <span class="cov0" title="0">{
+func (fd *fileDialog) dbusFileChooser(method string, title string) error <span class="cov5" title="2">{
         freedesktopFilters := convertFiltersToFreedesktopFilter(fd.filters)
 
         currentFolder := make([]byte, len(fd.InitialDirectory())+1)
@@ -254,7 +266,7 @@ func (fd *fileDialog) dbusFileChooser(method string, title string) error <span c
         }
 
         conn, err := dbus.SessionBus() // shared connection, don't close
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov5" title="2">{
                 return fmt.Errorf("failed to connect to session bus: %w", err)
         }</span>
 
@@ -266,7 +278,7 @@ func (fd *fileDialog) dbusFileChooser(method string, title string) error <span c
         <span class="cov0" title="0">return nil</span>
 }
 
-func convertFiltersToFreedesktopFilter(filters FileFilters) []freedesktopFilter <span class="cov1" title="1">{
+func convertFiltersToFreedesktopFilter(filters FileFilters) []freedesktopFilter <span class="cov8" title="3">{
         var result []freedesktopFilter
         for _, filter := range filters </span><span class="cov10" title="4">{
                 var filterRules []freedesktopFilterRule
@@ -275,7 +287,7 @@ func convertFiltersToFreedesktopFilter(filters FileFilters) []freedesktopFilter 
                 }</span>
                 <span class="cov10" title="4">result = append(result, freedesktopFilter{Name: filter.Description, Rules: filterRules})</span>
         }
-        <span class="cov1" title="1">return result</span>
+        <span class="cov8" title="3">return result</span>
 }
 
 // Wait for the response from the file chooser dialog.
