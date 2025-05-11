@@ -57,7 +57,7 @@
 				
 				<option value="file0">github.com/heathcliff26/godialog/dialog.go (100.0%)</option>
 				
-				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (47.3%)</option>
+				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (44.8%)</option>
 				
 				<option value="file2">github.com/heathcliff26/godialog/fallback/fyne/dialog.go (59.4%)</option>
 				
@@ -185,6 +185,7 @@ package godialog
 import (
         "fmt"
         "log/slog"
+        "net/url"
         "strings"
 
         "github.com/godbus/dbus/v5"
@@ -322,7 +323,11 @@ func dbusWaitForResponse() (string, error) <span class="cov0" title="0">{
         }</span>
 
         <span class="cov0" title="0">path, _ := strings.CutPrefix(uris[0], "file://")
-        return path, nil</span>
+        path, err = url.PathUnescape(path)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to unescape path: %w", err)
+        }</span>
+        <span class="cov0" title="0">return path, nil</span>
 }
 </pre>
 		
