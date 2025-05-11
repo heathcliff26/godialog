@@ -18,7 +18,7 @@ var (
 )
 
 func main() {
-	a := app.New()
+	a := app.NewWithID("com.github.heathcliff26.godialog.testapp")
 	w := a.NewWindow("FileDialog Test App")
 	w.Resize(fyne.NewSize(800, 600))
 
@@ -126,7 +126,7 @@ func main() {
 
 	fyneOpenButton := widget.NewButton("Fyne Open", func() {
 		fallback := fyneFallback.NewFyneFallbackDialog(a)
-		fallback.Open(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
+		go fallback.Open(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
@@ -137,7 +137,7 @@ func main() {
 
 	fyneSaveButton := widget.NewButton("Fyne Save", func() {
 		fallback := fyneFallback.NewFyneFallbackDialog(a)
-		fallback.Save(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
+		go fallback.Save(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
