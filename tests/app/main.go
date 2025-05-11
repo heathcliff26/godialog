@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	filedialog "github.com/heathcliff26/godialog"
+	fyneFallback "github.com/heathcliff26/godialog/fallback/fyne"
 )
 
 var (
@@ -96,14 +97,9 @@ func main() {
 
 	// Buttons
 	openButton := widget.NewButton("Open File Dialog", func() {
-		startLocation := startLocationEntry.Text
-		filters := parseFilters(filterEntry.Text)
+		fd := prepFileDialog(startLocationEntry.Text, filterEntry.Text)
 
-		appendLog(fmt.Sprintf("Open file dialog. folder: '%s', filters: '%v'", startLocation, filters))
-		fd := filedialog.FileDialog{
-			InitialDirectory: startLocation,
-		}
-		fd.SetFilters(filters)
+		appendLog(fmt.Sprintf("Open file dialog. folder: '%s', filters: '%v'", fd.InitialDirectory, fd.Filters()))
 
 		fd.Open(titleEntry.Text, func(path string, err error) {
 			if err != nil {
@@ -115,16 +111,33 @@ func main() {
 	})
 
 	saveButton := widget.NewButton("Save File Dialog", func() {
-		startLocation := startLocationEntry.Text
-		filters := parseFilters(filterEntry.Text)
+		fd := prepFileDialog(startLocationEntry.Text, filterEntry.Text)
 
-		appendLog(fmt.Sprintf("Save file dialog. folder: '%s', filters: '%v'", startLocation, filters))
-		fd := filedialog.FileDialog{
-			InitialDirectory: startLocation,
-		}
-		fd.SetFilters(filters)
+		appendLog(fmt.Sprintf("Save file dialog. folder: '%s', filters: '%v'", fd.InitialDirectory, fd.Filters()))
 
 		fd.Save(titleEntry.Text, func(path string, err error) {
+			if err != nil {
+				appendLog(fmt.Sprintf("Error: %v", err))
+				return
+			}
+			appendLog(fmt.Sprintf("Saved file: %s", path))
+		})
+	})
+
+	fyneOpenButton := widget.NewButton("Fyne Open", func() {
+		fallback := fyneFallback.NewFyneFallbackDialog(a)
+		fallback.Open(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
+			if err != nil {
+				appendLog(fmt.Sprintf("Error: %v", err))
+				return
+			}
+			appendLog(fmt.Sprintf("Selected file: %s", path))
+		})
+	})
+
+	fyneSaveButton := widget.NewButton("Fyne Save", func() {
+		fallback := fyneFallback.NewFyneFallbackDialog(a)
+		fallback.Save(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
@@ -142,11 +155,20 @@ func main() {
 		),
 	)
 
-	buttons := container.NewHBox(openButton, saveButton)
+	buttons := container.NewHBox(openButton, saveButton, fyneOpenButton, fyneSaveButton)
 	content := container.NewBorder(configForm, buttons, nil, nil, output)
 
 	w.SetContent(content)
 	w.ShowAndRun()
+}
+
+func prepFileDialog(startLocationText string, filterText string) filedialog.FileDialog {
+	filters := parseFilters(filterText)
+	fd := filedialog.FileDialog{
+		InitialDirectory: startLocationText,
+	}
+	fd.SetFilters(filters)
+	return fd
 }
 
 func parseFilters(filterText string) filedialog.FileFilters {
