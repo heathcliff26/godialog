@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	filedialog "github.com/heathcliff26/godialog"
+	"github.com/heathcliff26/godialog"
 	fyneFallback "github.com/heathcliff26/godialog/fallback/fyne"
 )
 
@@ -162,20 +162,20 @@ func main() {
 	w.ShowAndRun()
 }
 
-func prepFileDialog(startLocationText string, filterText string) filedialog.FileDialog {
+func prepFileDialog(startLocationText string, filterText string) godialog.FileDialog {
 	filters := parseFilters(filterText)
-	fd := filedialog.FileDialog{
+	fd := godialog.FileDialog{
 		InitialDirectory: startLocationText,
 	}
 	fd.SetFilters(filters)
 	return fd
 }
 
-func parseFilters(filterText string) filedialog.FileFilters {
+func parseFilters(filterText string) godialog.FileFilters {
 	if filterText == "" {
 		return nil
 	}
-	var filters filedialog.FileFilters
+	var filters godialog.FileFilters
 
 	for _, line := range strings.Split(filterText, "\n") {
 		s := strings.Split(line, ";")
@@ -183,7 +183,7 @@ func parseFilters(filterText string) filedialog.FileFilters {
 			appendLog(fmt.Sprintf("Invalid filter format: %s", line))
 			continue
 		}
-		filter := filedialog.FileFilter{
+		filter := godialog.FileFilter{
 			Description: s[0],
 			Extensions:  strings.Split(s[1], " "),
 		}

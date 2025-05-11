@@ -1,4 +1,4 @@
-package filedialog
+package godialog
 
 import (
 	"testing"
