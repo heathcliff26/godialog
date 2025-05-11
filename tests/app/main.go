@@ -106,7 +106,7 @@ func main() {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
 			}
-			appendLog(fmt.Sprintf("Selected file: %s", path))
+			appendLog(fmt.Sprintf("Selected file: '%s'", path))
 		})
 	})
 
@@ -120,7 +120,7 @@ func main() {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
 			}
-			appendLog(fmt.Sprintf("Saved file: %s", path))
+			appendLog(fmt.Sprintf("Saved file: '%s'", path))
 		})
 	})
 
@@ -131,7 +131,7 @@ func main() {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
 			}
-			appendLog(fmt.Sprintf("Selected file: %s", path))
+			appendLog(fmt.Sprintf("Selected file: '%s'", path))
 		})
 	})
 
@@ -142,7 +142,7 @@ func main() {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
 			}
-			appendLog(fmt.Sprintf("Saved file: %s", path))
+			appendLog(fmt.Sprintf("Saved file: '%s'", path))
 		})
 	})
 
@@ -179,7 +179,7 @@ func parseFilters(filterText string) godialog.FileFilters {
 	for _, line := range strings.Split(filterText, "\n") {
 		s := strings.Split(line, ";")
 		if len(s) != 2 {
-			appendLog(fmt.Sprintf("Invalid filter format: %s", line))
+			appendLog(fmt.Sprintf("Invalid filter format: '%s'", line))
 			continue
 		}
 		filter := godialog.FileFilter{

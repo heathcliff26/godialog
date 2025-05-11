@@ -8,19 +8,32 @@
 
 GoDialog is a golang API for opening OS native file dialogs on linux/windows. Additionally it allows to define a fallback implementation should the native dialog not work.
 
-TODO:
-- [x] Update all files and adapt for current use-case
-- [x] Copy over files from go-minesweeper
-- [x] Initialize go module
-- [x] Create github repo
-- [x] Update ci and app permissions
-- [x] Create test app
-- [x] Move fyne native implementation into separate package
-- [x] Do not vendor deps?
-- [x] Rename filedialog package to dodialog
-- [x] Move dbus to linux dialog file
-- [ ] Test with go-minesweeper
-- [ ] Test infraspace-...
-- [ ] Update README.md
-- [ ] Release
-- [ ] Use in other projects
+## Usage
+
+To get started run
+```
+go get github.com/heathcliff26/godialog@latest
+```
+
+## Examples
+
+Please take a look at the [examples](examples).
+
+To get started, here is a simple usage snippet:
+```
+fd := godialog.NewFileDialog()
+
+res := make(chan string)
+
+fd.Open("Test Dialog", func(s string, err error) {
+	defer close(res)
+
+	if err != nil {
+		res <- fmt.Sprintf("Error: %v", err)
+	} else {
+		res <- fmt.Sprintf("Selected file: '%s'", s)
+	}
+})
+
+println(<-res)
+```
