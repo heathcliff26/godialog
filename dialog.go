@@ -18,6 +18,11 @@ type FileDialog struct {
 	fallback         FallbackDialog
 }
 
+// Create a new file dialog.
+func NewFileDialog() *FileDialog {
+	return &FileDialog{}
+}
+
 // Return the current file filters.
 // Returns nil if no filters are set.
 func (fd *FileDialog) Filters() FileFilters {

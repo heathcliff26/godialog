@@ -6,6 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewFileDialog(t *testing.T) {
+	assert.Equal(t, &FileDialog{}, NewFileDialog(), "NewFileDialog should return a new instance of FileDialog")
+}
 func TestFileDialogFilters(t *testing.T) {
 	assert := assert.New(t)
 	fd := &FileDialog{}
