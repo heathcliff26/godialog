@@ -7,11 +7,11 @@ import (
 )
 
 func TestNewFileDialog(t *testing.T) {
-	assert.Equal(t, &FileDialog{}, NewFileDialog(), "NewFileDialog should return a new instance of FileDialog")
+	assert.Equal(t, &fileDialog{}, NewFileDialog(), "NewFileDialog should return a new instance of FileDialog")
 }
 func TestFileDialogFilters(t *testing.T) {
 	assert := assert.New(t)
-	fd := &FileDialog{}
+	fd := NewFileDialog()
 
 	filters := FileFilters{
 		{"Image Files", []string{"*.jpg", "*.jpeg", "*.png"}},
@@ -28,12 +28,18 @@ func TestFileDialogFilters(t *testing.T) {
 }
 
 func TestFileDialogFallback(t *testing.T) {
-	fd := &FileDialog{}
+	fd := NewFileDialog()
 
 	// Test setting and getting fallback
 	mockFallback := &mockFallbackDialog{}
 	fd.SetFallback(mockFallback)
 	assert.Same(t, mockFallback, fd.Fallback())
+}
+
+func TestFileDialogInitialDirectory(t *testing.T) {
+	fd := NewFileDialog()
+	fd.SetInitialDirectory("/home/user")
+	assert.Equal(t, "/home/user", fd.InitialDirectory(), "Initial directory should be set correctly")
 }
 
 // Mock implementation of FallbackDialog for testing
