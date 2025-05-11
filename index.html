@@ -86,7 +86,7 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package filedialog
+		<pre class="file" id="file0" style="display: none">package godialog
 
 type DialogCallback func(string, error)
 
@@ -136,7 +136,7 @@ func (fd *FileDialog) SetFallback(fallback FallbackDialog) <span class="cov1" ti
 		
 		<pre class="file" id="file1" style="display: none">//go:build linux
 
-package filedialog
+package godialog
 
 import (
         "fmt"
@@ -280,7 +280,7 @@ import (
         "fyne.io/fyne/v2"
         "fyne.io/fyne/v2/dialog"
         "fyne.io/fyne/v2/storage"
-        filedialog "github.com/heathcliff26/godialog"
+        "github.com/heathcliff26/godialog"
 )
 
 const (
@@ -288,8 +288,8 @@ const (
         DefaultDialogWidth  float32 = 600
 )
 
-// Ensure FyneFallbackDialog implements filedialog.FallbackDialog
-var _ filedialog.FallbackDialog = (*FyneFallbackDialog)(nil)
+// Ensure FyneFallbackDialog implements godialog.FallbackDialog
+var _ godialog.FallbackDialog = (*FyneFallbackDialog)(nil)
 
 // Opens a file dialog in a new fyne window for the given app.
 type FyneFallbackDialog struct {
@@ -307,7 +307,7 @@ func NewFyneFallbackDialog(app fyne.App) *FyneFallbackDialog <span class="cov10"
 }</span>
 
 // Shows the open file dialog and calls the callback asynchronously.
-func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters filedialog.FileFilters, cb filedialog.DialogCallback) <span class="cov1" title="1">{
+func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters godialog.FileFilters, cb godialog.DialogCallback) <span class="cov1" title="1">{
         if f.App == nil </span><span class="cov1" title="1">{
                 go cb("", fmt.Errorf("cannot open file dialog: fyne.App is nil"))
                 return
@@ -326,7 +326,7 @@ func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters
 }
 
 // Shows the save file dialog and calls the callback asynchronously.
-func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters filedialog.FileFilters, cb filedialog.DialogCallback) <span class="cov1" title="1">{
+func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters godialog.FileFilters, cb godialog.DialogCallback) <span class="cov1" title="1">{
         if f.App == nil </span><span class="cov1" title="1">{
                 go cb("", fmt.Errorf("cannot open file dialog: fyne.App is nil"))
                 return
@@ -344,7 +344,7 @@ func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters
         }</span>
 }
 
-func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters filedialog.FileFilters, d *dialog.FileDialog, w fyne.Window) error <span class="cov10" title="2">{
+func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters godialog.FileFilters, d *dialog.FileDialog, w fyne.Window) error <span class="cov10" title="2">{
         d.SetFilter(storage.NewExtensionFileFilter(filters.Extensions()))
 
         err := setDialogLocationToDir(initialDirectory, d)
@@ -376,7 +376,7 @@ import (
         "fyne.io/fyne/v2"
         "fyne.io/fyne/v2/dialog"
         "fyne.io/fyne/v2/storage"
-        filedialog "github.com/heathcliff26/godialog"
+        "github.com/heathcliff26/godialog"
 )
 
 // Set a file dialogs location to the given directory.
@@ -401,7 +401,7 @@ type GenericURICloser interface {
         URI() fyne.URI
 }
 
-func callCallback(cb filedialog.DialogCallback, uri GenericURICloser, err error) <span class="cov7" title="3">{
+func callCallback(cb godialog.DialogCallback, uri GenericURICloser, err error) <span class="cov7" title="3">{
         if err != nil </span><span class="cov1" title="1">{
                 cb("", err)
                 return
@@ -417,7 +417,7 @@ func callCallback(cb filedialog.DialogCallback, uri GenericURICloser, err error)
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package filedialog
+		<pre class="file" id="file4" style="display: none">package godialog
 
 type FileFilter struct {
         // A short description of this filter.
