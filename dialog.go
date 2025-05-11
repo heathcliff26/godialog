@@ -1,102 +1,46 @@
 package filedialog
 
-import (
-	"fmt"
+type DialogCallback func(string, error)
 
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/storage"
-)
-
-const (
-	DialogHeight = 800
-	DialogWidth  = 600
-)
-
-type GenericURICloser interface {
-	Close() error
-	URI() fyne.URI
+type FallbackDialog interface {
+	// Shows the open file dialog and calls the callback asynchronously.
+	Open(title string, initialDirectory string, filters FileFilters, cb DialogCallback)
+	// Shows the save file dialog and calls the callback asynchronously.
+	Save(title string, initialDirectory string, filters FileFilters, cb DialogCallback)
 }
 
-// Use internal fyne file dialog to open a file.
-func internalFileOpen(name string, startLocation string, filters FileFilters, cb func(string, error)) {
-	w := fyne.CurrentApp().NewWindow(name)
-	d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) {
-		// Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
-		go callCallback(cb, uri, err)
-	}, w)
-
-	err := showFileDialog(startLocation, filters.Extensions(), d, w)
-	if err != nil {
-		cb("", err)
-	}
+// OS native file dialog. Allows to define a fallback implementation in case it does not work.
+// File dialogs are always opened asynchronously.
+type FileDialog struct {
+	// The directory that the file dialog should open in.
+	InitialDirectory string
+	filters          FileFilters
+	fallback         FallbackDialog
 }
 
-// Use internal fyne file dialog to save a file.
-func internalFileSave(name string, startLocation string, filters FileFilters, cb func(string, error)) {
-	w := fyne.CurrentApp().NewWindow(name)
-	d := dialog.NewFileSave(func(uri fyne.URIWriteCloser, err error) {
-		// Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
-		go callCallback(cb, uri, err)
-	}, w)
-
-	err := showFileDialog(startLocation, filters.Extensions(), d, w)
-	if err != nil {
-		cb("", err)
-	}
+// Return the current file filters.
+// Returns nil if no filters are set.
+func (fd *FileDialog) Filters() FileFilters {
+	return fd.filters
 }
 
-// Set a file dialogs location to the given directory.
-// When dir is empty, uses current directory.
-// Returns error on failure.
-func setDialogLocationToDir(dir string, d *dialog.FileDialog) error {
-	uri, err := storage.ParseURI("file://" + dir)
-	if err != nil {
-		return fmt.Errorf("failed to parse URI: %w", err)
-	}
-	listURI, err := storage.ListerForURI(uri)
-	if err != nil {
-		return fmt.Errorf("failed to create lister for URI: %w", err)
-	}
-	d.SetLocation(listURI)
-
-	return nil
+// Add a new filter to the list of filters.
+func (fd *FileDialog) AddFilter(filter FileFilter) {
+	fd.filters = append(fd.filters, filter)
 }
 
-func showFileDialog(startLocation string, extensions []string, d *dialog.FileDialog, w fyne.Window) error {
-	d.SetFilter(storage.NewExtensionFileFilter(extensions))
-
-	err := setDialogLocationToDir(startLocation, d)
-	if err != nil {
-		return err
-	}
-
-	d.SetOnClosed(func() {
-		w.Close()
-	})
-
-	w.Resize(fyne.NewSize(DialogHeight, DialogWidth))
-	w.SetFixedSize(true)
-	d.Resize(fyne.NewSize(DialogHeight, DialogWidth))
-	fyne.Do(func() {
-		w.Show()
-		d.Show()
-	})
-
-	return nil
+// Set the file filters.
+func (fd *FileDialog) SetFilters(filters FileFilters) {
+	fd.filters = filters
 }
 
-func callCallback(cb func(string, error), uri GenericURICloser, err error) {
-	if err != nil {
-		cb("", err)
-		return
-	}
-	if uri == nil {
-		cb("", nil)
-		return
-	}
-	defer uri.Close()
+// The current fallback dialog.
+// Returns nil if no fallback is set.
+func (fd *FileDialog) Fallback() FallbackDialog {
+	return fd.fallback
+}
 
-	path := uri.URI().Path()
-	cb(path, nil)
+// Set the fallback dialog in case the native dialog does not work.
+func (fd *FileDialog) SetFallback(fallback FallbackDialog) {
+	fd.fallback = fallback
 }

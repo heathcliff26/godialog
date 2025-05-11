@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConvertFilters(t *testing.T) {
+func TestConvertFiltersToFreedesktopFilter(t *testing.T) {
 	filter := FileFilters{
 		{"Text Files", []string{".txt", ".md"}},
 		{"Image Files", []string{".png", ".jpg"}},
@@ -38,7 +38,7 @@ func TestConvertFilters(t *testing.T) {
 		},
 	}
 
-	converted := convertFilters(filter)
+	converted := convertFiltersToFreedesktopFilter(filter)
 
 	assert.Equal(t, expected, converted, "Should convert filters correctly")
 }

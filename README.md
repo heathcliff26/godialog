@@ -9,14 +9,16 @@
 GoDialog is a golang API for opening OS native file dialogs on linux/windows. Additionally it allows to define a fallback implementation should the native dialog not work.
 
 TODO:
-- [ ] Update all files and adapt for current use-case
+- [x] Update all files and adapt for current use-case
 - [x] Copy over files from go-minesweeper
 - [x] Initialize go module
 - [x] Create github repo
-- [ ] Update ci and app permissions
+- [x] Update ci and app permissions
 - [x] Create test app
-- [ ] Move fyne native implementation into separate package
+- [x] Move fyne native implementation into separate package
 - [x] Do not vendor deps?
+- [ ] Rename filedialog package to dodialog
+- [x] Move dbus to linux dialog file
 - [ ] Test with go-minesweeper
 - [ ] Test infraspace-...
 - [ ] Update README.md
