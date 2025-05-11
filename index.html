@@ -88,6 +88,9 @@
 		
 		<pre class="file" id="file0" style="display: none">package godialog
 
+// Ensure fileDialog implements the FileDialog interface.
+var _ FileDialog = &amp;fileDialog{}
+
 type DialogCallback func(string, error)
 
 type FallbackDialog interface {
@@ -98,44 +101,78 @@ type FallbackDialog interface {
 }
 
 // OS native file dialog. Allows to define a fallback implementation in case it does not work.
+// callbacks are always called asynchronously.
+type FileDialog interface {
+        // Return the current file filters (nil if no filters are set).
+        Filters() FileFilters
+        // Add a new filter to the list of filters.
+        AddFilter(filter FileFilter)
+        // Set the file filters.
+        SetFilters(filters FileFilters)
+        // The current fallback dialog.
+        // Returns nil if no fallback is set.
+        Fallback() FallbackDialog
+        // Set the fallback dialog in case the native dialog does not work.
+        SetFallback(fallback FallbackDialog)
+        // Set the initial directory for the file dialog.
+        SetInitialDirectory(dir string)
+        // Get the initial directory for the file dialog.
+        InitialDirectory() string
+
+        // Show a file open dialog in a new window and return path.
+        Open(title string, cb DialogCallback)
+        // Show a file save dialog in a new window and return path.
+        Save(title string, cb DialogCallback)
+}
+
+// OS native file dialog. Allows to define a fallback implementation in case it does not work.
 // File dialogs are always opened asynchronously.
-type FileDialog struct {
+type fileDialog struct {
         // The directory that the file dialog should open in.
-        InitialDirectory string
+        initialDirectory string
         filters          FileFilters
         fallback         FallbackDialog
 }
 
 // Create a new file dialog.
-func NewFileDialog() *FileDialog <span class="cov1" title="1">{
-        return &amp;FileDialog{}
+func NewFileDialog() FileDialog <span class="cov10" title="4">{
+        return &amp;fileDialog{}
 }</span>
 
-// Return the current file filters.
-// Returns nil if no filters are set.
-func (fd *FileDialog) Filters() FileFilters <span class="cov10" title="2">{
+// Return the current file filters (nil if no filters are set).
+func (fd *fileDialog) Filters() FileFilters <span class="cov5" title="2">{
         return fd.filters
 }</span>
 
 // Add a new filter to the list of filters.
-func (fd *FileDialog) AddFilter(filter FileFilter) <span class="cov1" title="1">{
+func (fd *fileDialog) AddFilter(filter FileFilter) <span class="cov1" title="1">{
         fd.filters = append(fd.filters, filter)
 }</span>
 
 // Set the file filters.
-func (fd *FileDialog) SetFilters(filters FileFilters) <span class="cov1" title="1">{
+func (fd *fileDialog) SetFilters(filters FileFilters) <span class="cov1" title="1">{
         fd.filters = filters
 }</span>
 
 // The current fallback dialog.
 // Returns nil if no fallback is set.
-func (fd *FileDialog) Fallback() FallbackDialog <span class="cov1" title="1">{
+func (fd *fileDialog) Fallback() FallbackDialog <span class="cov1" title="1">{
         return fd.fallback
 }</span>
 
 // Set the fallback dialog in case the native dialog does not work.
-func (fd *FileDialog) SetFallback(fallback FallbackDialog) <span class="cov1" title="1">{
+func (fd *fileDialog) SetFallback(fallback FallbackDialog) <span class="cov1" title="1">{
         fd.fallback = fallback
+}</span>
+
+// Set the initial directory for the file dialog.
+func (fd *fileDialog) SetInitialDirectory(dir string) <span class="cov1" title="1">{
+        fd.initialDirectory = dir
+}</span>
+
+// Get the initial directory for the file dialog.
+func (fd *fileDialog) InitialDirectory() string <span class="cov1" title="1">{
+        return fd.initialDirectory
 }</span>
 </pre>
 		
@@ -172,12 +209,12 @@ type freedesktopFilter struct {
 }
 
 // Show a file open dialog in a new window and return path.
-func (fd *FileDialog) Open(title string, cb DialogCallback) <span class="cov0" title="0">{
+func (fd *fileDialog) Open(title string, cb DialogCallback) <span class="cov0" title="0">{
         err := fd.dbusFileChooser(DBusFileChooserOpenFile, title)
         if err != nil </span><span class="cov0" title="0">{
                 if fd.fallback != nil </span><span class="cov0" title="0">{
                         slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
-                        fd.fallback.Open(title, fd.InitialDirectory, fd.filters, cb)
+                        fd.fallback.Open(title, fd.InitialDirectory(), fd.filters, cb)
                 }</span> else<span class="cov0" title="0"> {
                         go cb("", fmt.Errorf("cannot open file dialog: %w", err))
                 }</span>
@@ -188,12 +225,12 @@ func (fd *FileDialog) Open(title string, cb DialogCallback) <span class="cov0" t
 }
 
 // Show a file save dialog in a new window and return path.
-func (fd *FileDialog) Save(title string, cb DialogCallback) <span class="cov0" title="0">{
+func (fd *fileDialog) Save(title string, cb DialogCallback) <span class="cov0" title="0">{
         err := fd.dbusFileChooser(DBusFileChooserSaveFile, title)
         if err != nil </span><span class="cov0" title="0">{
                 if fd.fallback != nil </span><span class="cov0" title="0">{
                         slog.Info("Failed to open linux native file dialog, using fallback", "error", err)
-                        fd.fallback.Save(title, fd.InitialDirectory, fd.filters, cb)
+                        fd.fallback.Save(title, fd.InitialDirectory(), fd.filters, cb)
                 }</span> else<span class="cov0" title="0"> {
                         go cb("", fmt.Errorf("cannot open file dialog: %w", err))
                 }</span>
@@ -204,11 +241,11 @@ func (fd *FileDialog) Save(title string, cb DialogCallback) <span class="cov0" t
 }
 
 // Call freedesktop via dbus to show a file chooser dialog.
-func (fd *FileDialog) dbusFileChooser(method string, title string) error <span class="cov0" title="0">{
+func (fd *fileDialog) dbusFileChooser(method string, title string) error <span class="cov0" title="0">{
         freedesktopFilters := convertFiltersToFreedesktopFilter(fd.filters)
 
-        currentFolder := make([]byte, len(fd.InitialDirectory)+1)
-        copy(currentFolder, fd.InitialDirectory)
+        currentFolder := make([]byte, len(fd.InitialDirectory())+1)
+        copy(currentFolder, fd.InitialDirectory())
 
         options := map[string]dbus.Variant{
                 "modal":          dbus.MakeVariant(true),
@@ -294,7 +331,7 @@ const (
 )
 
 // Ensure FyneFallbackDialog implements godialog.FallbackDialog
-var _ godialog.FallbackDialog = (*FyneFallbackDialog)(nil)
+var _ godialog.FallbackDialog = &amp;FyneFallbackDialog{}
 
 // Opens a file dialog in a new fyne window for the given app.
 type FyneFallbackDialog struct {
