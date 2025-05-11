@@ -8,7 +8,7 @@ lint:
 
 # Run unit-tests
 test:
-	go test -v -race -timeout 300s -coverprofile=coverprofile.out $$(go list ./... | grep -v github.com/heathcliff26/godialog/tests)
+	go test -v -race -timeout 300s -coverprofile=coverprofile.out $$(go list ./... | grep -v github.com/heathcliff26/godialog/tests | grep -v github.com/heathcliff26/godialog/examples)
 
 # Run the test app for manual testing
 run:
