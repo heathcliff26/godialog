@@ -100,8 +100,12 @@ func main() {
 		filters := parseFilters(filterEntry.Text)
 
 		appendLog(fmt.Sprintf("Open file dialog. folder: '%s', filters: '%v'", startLocation, filters))
+		fd := filedialog.FileDialog{
+			InitialDirectory: startLocation,
+		}
+		fd.SetFilters(filters)
 
-		filedialog.FileOpen(titleEntry.Text, startLocation, filters, func(path string, err error) {
+		fd.Open(titleEntry.Text, func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
@@ -115,8 +119,12 @@ func main() {
 		filters := parseFilters(filterEntry.Text)
 
 		appendLog(fmt.Sprintf("Save file dialog. folder: '%s', filters: '%v'", startLocation, filters))
+		fd := filedialog.FileDialog{
+			InitialDirectory: startLocation,
+		}
+		fd.SetFilters(filters)
 
-		filedialog.FileSave(titleEntry.Text, startLocation, filters, func(path string, err error) {
+		fd.Save(titleEntry.Text, func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
 				return
