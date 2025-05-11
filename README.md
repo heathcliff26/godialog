@@ -17,7 +17,7 @@ TODO:
 - [x] Create test app
 - [x] Move fyne native implementation into separate package
 - [x] Do not vendor deps?
-- [ ] Rename filedialog package to dodialog
+- [x] Rename filedialog package to dodialog
 - [x] Move dbus to linux dialog file
 - [ ] Test with go-minesweeper
 - [ ] Test infraspace-...

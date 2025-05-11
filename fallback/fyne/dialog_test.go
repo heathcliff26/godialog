@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/test"
-	filedialog "github.com/heathcliff26/godialog"
+	"github.com/heathcliff26/godialog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +54,7 @@ func TestShowFileDialog(t *testing.T) {
 	w := a.NewWindow("Test")
 	d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) {}, w)
 
-	filters := filedialog.FileFilters{
+	filters := godialog.FileFilters{
 		{
 			Description: "Test",
 			Extensions:  []string{".txt"},

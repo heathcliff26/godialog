@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
-	filedialog "github.com/heathcliff26/godialog"
+	"github.com/heathcliff26/godialog"
 )
 
 const (
@@ -14,8 +14,8 @@ const (
 	DefaultDialogWidth  float32 = 600
 )
 
-// Ensure FyneFallbackDialog implements filedialog.FallbackDialog
-var _ filedialog.FallbackDialog = (*FyneFallbackDialog)(nil)
+// Ensure FyneFallbackDialog implements godialog.FallbackDialog
+var _ godialog.FallbackDialog = (*FyneFallbackDialog)(nil)
 
 // Opens a file dialog in a new fyne window for the given app.
 type FyneFallbackDialog struct {
@@ -33,7 +33,7 @@ func NewFyneFallbackDialog(app fyne.App) *FyneFallbackDialog {
 }
 
 // Shows the open file dialog and calls the callback asynchronously.
-func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters filedialog.FileFilters, cb filedialog.DialogCallback) {
+func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters godialog.FileFilters, cb godialog.DialogCallback) {
 	if f.App == nil {
 		go cb("", fmt.Errorf("cannot open file dialog: fyne.App is nil"))
 		return
@@ -52,7 +52,7 @@ func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters
 }
 
 // Shows the save file dialog and calls the callback asynchronously.
-func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters filedialog.FileFilters, cb filedialog.DialogCallback) {
+func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters godialog.FileFilters, cb godialog.DialogCallback) {
 	if f.App == nil {
 		go cb("", fmt.Errorf("cannot open file dialog: fyne.App is nil"))
 		return
@@ -70,7 +70,7 @@ func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters
 	}
 }
 
-func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters filedialog.FileFilters, d *dialog.FileDialog, w fyne.Window) error {
+func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters godialog.FileFilters, d *dialog.FileDialog, w fyne.Window) error {
 	d.SetFilter(storage.NewExtensionFileFilter(filters.Extensions()))
 
 	err := setDialogLocationToDir(initialDirectory, d)

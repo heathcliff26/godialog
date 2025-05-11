@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
-	filedialog "github.com/heathcliff26/godialog"
+	"github.com/heathcliff26/godialog"
 )
 
 // Set a file dialogs location to the given directory.
@@ -31,7 +31,7 @@ type GenericURICloser interface {
 	URI() fyne.URI
 }
 
-func callCallback(cb filedialog.DialogCallback, uri GenericURICloser, err error) {
+func callCallback(cb godialog.DialogCallback, uri GenericURICloser, err error) {
 	if err != nil {
 		cb("", err)
 		return

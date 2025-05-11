@@ -1,4 +1,4 @@
-package filedialog
+package godialog
 
 type DialogCallback func(string, error)
 

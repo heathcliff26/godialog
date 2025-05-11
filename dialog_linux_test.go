@@ -1,6 +1,6 @@
 //go:build linux
 
-package filedialog
+package godialog
 
 import (
 	"testing"

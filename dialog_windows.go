@@ -1,6 +1,6 @@
 //go:build windows
 
-package filedialog
+package godialog
 
 import (
 	"fmt"
