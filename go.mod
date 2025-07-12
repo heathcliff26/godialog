@@ -6,7 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.6.1
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/sys v0.33.0
+	golang.org/x/sys v0.34.0
 )
 
 require (
