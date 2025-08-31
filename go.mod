@@ -3,10 +3,10 @@ module github.com/heathcliff26/godialog
 go 1.24.0
 
 require (
-	fyne.io/fyne/v2 v2.6.2
+	fyne.io/fyne/v2 v2.6.3
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/stretchr/testify v1.10.0
-	golang.org/x/sys v0.34.0
+	github.com/stretchr/testify v1.11.1
+	golang.org/x/sys v0.35.0
 )
 
 require (
