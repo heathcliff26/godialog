@@ -59,7 +59,7 @@
 				
 				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (67.0%)</option>
 				
-				<option value="file2">github.com/heathcliff26/godialog/fallback/fyne/dialog.go (59.4%)</option>
+				<option value="file2">github.com/heathcliff26/godialog/fallback/fyne/dialog.go (54.5%)</option>
 				
 				<option value="file3">github.com/heathcliff26/godialog/fallback/fyne/utils.go (100.0%)</option>
 				
@@ -426,16 +426,18 @@ func (f *FyneFallbackDialog) Open(title string, initialDirectory string, filters
                 return
         }</span>
 
-        <span class="cov0" title="0">w := f.App.NewWindow(title)
-        d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) </span><span class="cov0" title="0">{
-                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
-                go callCallback(cb, uri, err)
-        }</span>, w)
+        <span class="cov0" title="0">fyne.Do(func() </span><span class="cov0" title="0">{
+                w := f.App.NewWindow(title)
+                d := dialog.NewFileOpen(func(uri fyne.URIReadCloser, err error) </span><span class="cov0" title="0">{
+                        // Ensure this runs in a goroutine to allow caller to use fyne.DoAndWait
+                        go callCallback(cb, uri, err)
+                }</span>, w)
 
-        <span class="cov0" title="0">err := f.showFileDialog(initialDirectory, filters, d, w)
-        if err != nil </span><span class="cov0" title="0">{
-                go cb("", err)
-        }</span>
+                <span class="cov0" title="0">err := f.showFileDialog(initialDirectory, filters, d, w)
+                if err != nil </span><span class="cov0" title="0">{
+                        go cb("", err)
+                }</span>
+        })
 }
 
 // Shows the save file dialog and calls the callback asynchronously.
@@ -445,16 +447,19 @@ func (f *FyneFallbackDialog) Save(title string, initialDirectory string, filters
                 return
         }</span>
 
-        <span class="cov0" title="0">w := f.App.NewWindow(title)
-        d := dialog.NewFileSave(func(uri fyne.URIWriteCloser, err error) </span><span class="cov0" title="0">{
-                // Ensure this runs in a goroutine as we call fyne.DoAndWait in the callback
-                go callCallback(cb, uri, err)
-        }</span>, w)
+        <span class="cov0" title="0">fyne.Do(func() </span><span class="cov0" title="0">{
+                w := f.App.NewWindow(title)
+                d := dialog.NewFileSave(func(uri fyne.URIWriteCloser, err error) </span><span class="cov0" title="0">{
+                        // Ensure this runs in a goroutine to allow caller to use fyne.DoAndWait
+                        go callCallback(cb, uri, err)
+                }</span>, w)
 
-        <span class="cov0" title="0">err := f.showFileDialog(initialDirectory, filters, d, w)
-        if err != nil </span><span class="cov0" title="0">{
-                go cb("", err)
-        }</span>
+                <span class="cov0" title="0">err := f.showFileDialog(initialDirectory, filters, d, w)
+                if err != nil </span><span class="cov0" title="0">{
+                        go cb("", err)
+                }</span>
+        })
+
 }
 
 func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters godialog.FileFilters, d *dialog.FileDialog, w fyne.Window) error <span class="cov10" title="2">{
@@ -472,12 +477,11 @@ func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters god
         <span class="cov1" title="1">w.Resize(fyne.NewSize(f.Height, f.Width))
         w.SetFixedSize(true)
         d.Resize(fyne.NewSize(f.Height, f.Width))
-        fyne.Do(func() </span><span class="cov1" title="1">{
-                w.Show()
-                d.Show()
-        }</span>)
 
-        <span class="cov1" title="1">return nil</span>
+        w.Show()
+        d.Show()
+
+        return nil</span>
 }
 </pre>
 		
