@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/heathcliff26/godialog"
-	fyneFallback "github.com/heathcliff26/godialog/fallback/fyne"
+	"github.com/heathcliff26/godialog/fallback/fynefb"
 )
 
 var (
@@ -125,7 +125,7 @@ func main() {
 	})
 
 	fyneOpenButton := widget.NewButton("Fyne Open", func() {
-		fallback := fyneFallback.NewFyneFallbackDialog(a)
+		fallback := fynefb.NewFyneFallbackDialog(a)
 		go fallback.Open(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
@@ -136,7 +136,7 @@ func main() {
 	})
 
 	fyneSaveButton := widget.NewButton("Fyne Save", func() {
-		fallback := fyneFallback.NewFyneFallbackDialog(a)
+		fallback := fynefb.NewFyneFallbackDialog(a)
 		go fallback.Save(titleEntry.Text, startLocationEntry.Text, parseFilters(filterEntry.Text), func(path string, err error) {
 			if err != nil {
 				appendLog(fmt.Sprintf("Error: %v", err))
