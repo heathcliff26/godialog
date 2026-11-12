@@ -59,9 +59,9 @@
 				
 				<option value="file1">github.com/heathcliff26/godialog/dialog_linux.go (67.0%)</option>
 				
-				<option value="file2">github.com/heathcliff26/godialog/fallback/fyne/dialog.go (54.5%)</option>
+				<option value="file2">github.com/heathcliff26/godialog/fallback/fynefb/dialog.go (54.5%)</option>
 				
-				<option value="file3">github.com/heathcliff26/godialog/fallback/fyne/utils.go (100.0%)</option>
+				<option value="file3">github.com/heathcliff26/godialog/fallback/fynefb/utils.go (100.0%)</option>
 				
 				<option value="file4">github.com/heathcliff26/godialog/filter.go (100.0%)</option>
 				
@@ -385,7 +385,7 @@ func parseDBusResponse(res *dbus.Signal) (path string, ignored bool, err error) 
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package fyne
+		<pre class="file" id="file2" style="display: none">package fynefb
 
 import (
         "fmt"
@@ -485,7 +485,7 @@ func (f *FyneFallbackDialog) showFileDialog(initialDirectory string, filters god
 }
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package fyne
+		<pre class="file" id="file3" style="display: none">package fynefb
 
 import (
         "fmt"
